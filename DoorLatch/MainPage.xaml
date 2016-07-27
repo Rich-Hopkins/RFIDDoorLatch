@@ -7,7 +7,64 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+	<Page.Resources>
+		<Style
+			x:Key="VerticalCenter"
+			TargetType="FrameworkElement">
+			<Setter
+				Property="Margin"
+				Value="3"></Setter>
+			<Setter
+				Property="VerticalAlignment"
+				Value="Center"></Setter>
+		</Style>
+		
+		<Style
+			TargetType="TextBlock"
+			BasedOn="{StaticResource VerticalCenter}">
+			<Setter
+				Property="HorizontalAlignment"
+				Value="Left"></Setter>
+		</Style>
+		<Style
+			TargetType="TextBox"
+			BasedOn="{StaticResource VerticalCenter}">
+			<Setter
+				Property="HorizontalAlignment"
+				Value="Right"></Setter>
+		</Style>
+	</Page.Resources>
 
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" HorizontalAlignment="Center">
+		<StackPanel
+			VerticalAlignment="Center">
+			<Grid
+				Margin="12">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition
+						Width="*"></ColumnDefinition>
+					<ColumnDefinition
+						Width="*"></ColumnDefinition>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0">Badge Number:</TextBlock>
+				<TextBox
+					x:Name="BadgeNum"
+					Grid.Column="1"
+					Text="Value"></TextBox>
+			</Grid>
+
+			<Grid
+				Margin="12">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition
+						Width="*"></ColumnDefinition>
+					<ColumnDefinition
+						Width="*"></ColumnDefinition>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0">Swipe Time:</TextBlock>
+				<TextBox Grid.Column="1"
+					Text="12:00 PM"></TextBox>
+			</Grid>
+		</StackPanel>
     </Grid>
 </Page>

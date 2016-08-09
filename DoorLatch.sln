@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DoorLatch", "DoorLatch\Door
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RFIDDoorLatch", "RFIDDoorLatch\RFIDDoorLatch.vcxproj", "{9B420633-F981-4E8E-BBC7-CE4AD8411BC6}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RFIDLatch", "RFIDLatch", "{FC50931B-33C7-4853-B3BB-F907FC900723}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM

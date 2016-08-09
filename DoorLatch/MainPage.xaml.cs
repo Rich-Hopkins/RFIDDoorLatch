@@ -20,90 +20,104 @@ using Windows.System.Threading;
 using Windows.System.Diagnostics;
 using System.Threading;
 
+
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
 namespace DoorLatch
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
-    public sealed partial class MainPage : Page
-    {
-	    private I2cDevice device;
-	    private Timer periodicTimer;
+	/// <summary>
+	/// An empty page that can be used on its own or navigated to within a Frame.
+	/// </summary>
+	public sealed partial class MainPage : Page
+	{
+		private I2cDevice device;
+		private Timer periodicTimer;
 		private bool lightOn = false;
-
-        public MainPage()
-        {
-            this.InitializeComponent();
-	        initCommunication();
+		private bool initialized = false;
+		public MainPage()
+		{
+			this.InitializeComponent();
+			initCommunication();
 		}
 
 		private async void initCommunication()
 		{
-			var settings = new I2cConnectionSettings(0x40);
-			settings.BusSpeed = I2cBusSpeed.StandardMode;
-			string aqs = I2cDevice.GetDeviceSelector("I2C1");
-			var dis = await DeviceInformation.FindAllAsync(aqs);
-			device = await I2cDevice.FromIdAsync(dis[0].Id, settings);
-			periodicTimer = new Timer(this.TimerCallback, null, 0, 100);
+			try
+			{
+				var settings = new I2cConnectionSettings(8);
+				settings.BusSpeed = I2cBusSpeed.StandardMode;
+				string aqs = I2cDevice.GetDeviceSelector("I2C1");
+				var dis = await DeviceInformation.FindAllAsync(aqs);
+				device = await I2cDevice.FromIdAsync(dis[0].Id, settings);
+				periodicTimer = new Timer(this.TimerCallback, null, 0, 1000);
+				initialized = true;
+			}
+			catch (Exception e)
+			{
+				Debug.WriteLine(e.Message);
+			}
 		}
 
 		private void TimerCallback(object state)
 		{
+			if (!initialized)
+			{
+				initCommunication();
+				return;
+			}
 			byte[] RegAddrBuf = new byte[] { 8 };
-			byte[] ReadBuf = new Byte[7];
-
+			byte[] ReadBuf = new Byte[11];
+			char[] cArray = new char[11];
 			try
-			{ 
+			{
 				device.Read(ReadBuf);
+				cArray = System.Text.Encoding.UTF8.GetString(ReadBuf, 0, 11).ToCharArray();
 			}
 			catch (Exception f)
 			{
 				Debug.WriteLine(f.Message);
-			}			
+			}
 
-
-			char[] cArray = System.Text.Encoding.UTF8.GetString(ReadBuf, 0, 3).ToCharArray();
+			if (cArray[0] == '0' && cArray.Length == 11)
+			{
+				
 			string str = new string(cArray);
-			//int val = BitConverter.ToInt16(ReadBuf, 0);
 			Debug.WriteLine(str);
 
 			var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
 			{
 				BadgeNum.Text = str.ToString();
 			});
-
-			//int val = int.Parse(str);
-
-			int val = 0;
-			bool result = int.TryParse(str, out val);
-			if (result)
-			{
-				bool tmpBool = val < 500 ? true : false;
-
-				if (tmpBool != lightOn)
-				{
-					SwitchLight(tmpBool);
-					lightOn = tmpBool;
-				}
+			ParseData(str);
 			}
-
 		}
 
-	    private void SwitchLight(bool lightOn)
-	    {
-		    string c = lightOn ? "1" : "0";
-		    byte[] b = System.Text.Encoding.UTF8.GetBytes(c);
-			
-		    try
-		    {
+		private void ParseData(string badgeDoorData)
+		{
+			string doorNum = badgeDoorData.Substring(1, 2);
+			string badgeNum = badgeDoorData.Substring(3);
+			if (badgeNum == "6014EAD5")
+			{
+				SendData("1" + doorNum + badgeNum);
+			}
+			else
+			{
+				SendData("0" + doorNum + badgeNum);
+			}
+		}
+
+		private void SendData(string authorization)
+		{
+			byte[] b = System.Text.Encoding.UTF8.GetBytes(authorization);
+
+			try
+			{
 				device.Write(b);
-		    }
-		    catch (Exception e)
-		    {
-			    Debug.WriteLine(e.Message);
-		    }
-	    }
-    }
+			}
+			catch (Exception e)
+			{
+				Debug.WriteLine(e.Message);
+			}
+		}
+	}
 }

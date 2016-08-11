@@ -6,9 +6,10 @@
 const int SS_PIN = 10;
 const int RST_PIN = 9;
 const int DoorID = 8;
-const int redPin = 7;  // Red LED
-const int greenPin = 6;  // Green LED
-const int bluePin = 5;  // Blue LED
+const int redPin = 7;  
+const int greenPin = 6;
+const int bluePin = 5; 
+const int doorPin = 3; 
 String strDoorID;
 
 // Color Modes
@@ -29,7 +30,7 @@ boolean cardSent = false;
 void setup()
 {
 	Wire.begin(DoorID);
-	Serial.begin(9600);
+	Serial.begin(115200);
 	SPI.begin();
 	rfid.PCD_Init();
 
@@ -41,9 +42,11 @@ void setup()
 	pinMode(redPin, OUTPUT);
 	pinMode(greenPin, OUTPUT);
 	pinMode(bluePin, OUTPUT);
+	pinMode(doorPin, OUTPUT);
 	digitalWrite(redPin, LOW);
 	digitalWrite(greenPin, LOW);
 	digitalWrite(bluePin, LOW);
+	digitalWrite(doorPin, LOW);
 
 	time = millis();
 
@@ -61,7 +64,7 @@ void loop()
 	}
 	else {
 		unsigned long time2 = millis();
-		if (time2 - time > 5000 || time2 < time) {
+		if (time2 - time > 3000 || time2 < time) {
 			clearTagData();
 		}
 	}
@@ -129,6 +132,8 @@ void loop()
 		tag = "FFFFFFFFFFF";
 		cardSent = false;
 		hasTag = false;
+		digitalWrite(doorPin, LOW);
+		setLEDMode(COLOR_MODE_BLUE);
 	}
 
 
@@ -146,7 +151,7 @@ void loop()
 
 	void SendData() {
 		if (!cardSent) {
-			Serial.println("Sending " + tag);
+			Serial.println("Sending Data :  " + tag);
 			Wire.write(tag.c_str());
 			cardSent = true;
 		}
@@ -160,14 +165,13 @@ void loop()
 			index++;
 		}
 		String receivedData = String(cArr);
+		receivedData = receivedData.substring(0, 11);
 		Serial.println("Received Data : " + receivedData);
-		Serial.println("Received Data without Unlock Bit: " + receivedData.substring(1));
-		Serial.println("     Tag Data without Unlock Bit:  " + tag.substring(1));
 
-		if (receivedData.substring(1) != tag.substring(1)) {
+		/*if (receivedData.substring(1) != tag.substring(1)) {
 			return;
-		}
-		if (cArr[0] == 1 && receivedData.substring(1) == tag.substring(1)) {
+		}*/
+		if (receivedData.substring(0, 1) == "1" && receivedData.substring(1) == tag.substring(1)) {
 			GrantAccess();
 		}
 		else {
@@ -177,13 +181,10 @@ void loop()
 
 	void GrantAccess() {
 		setLEDMode(COLOR_MODE_GREEN);
-		delay(5000);
-		setLEDMode(COLOR_MODE_BLUE);
+		digitalWrite(doorPin, HIGH);
 	}
 
 	void DenyAccess() {
 		setLEDMode(COLOR_MODE_RED);
-		delay(5000);
-		setLEDMode(COLOR_MODE_BLUE);
 	}
 

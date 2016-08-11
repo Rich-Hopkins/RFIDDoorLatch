@@ -48,8 +48,9 @@
 				</Grid.ColumnDefinitions>
 				<TextBlock Grid.Column="0">Badge Number:</TextBlock>
 				<TextBox
-					x:Name="BadgeNum"
+					x:Name="txtBadgeNum"
 					Grid.Column="1"
+					MinWidth="125"
 					Text="Value"></TextBox>
 			</Grid>
 
@@ -62,7 +63,10 @@
 						Width="*"></ColumnDefinition>
 				</Grid.ColumnDefinitions>
 				<TextBlock Grid.Column="0">Swipe Time:</TextBlock>
-				<TextBox Grid.Column="1"
+				<TextBox 
+					x:Name="txtTimeStamp"
+					Grid.Column="1"
+						 
 					Text="12:00 PM"></TextBox>
 			</Grid>
 		</StackPanel>

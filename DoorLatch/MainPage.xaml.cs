@@ -1,23 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
 using Windows.Devices.I2c;
 using Windows.Devices.Enumeration;
-using Windows.System.Threading;
-using Windows.System.Diagnostics;
 using System.Threading;
 
 
@@ -34,6 +19,7 @@ namespace DoorLatch
 		private Timer periodicTimer;
 		private bool lightOn = false;
 		private bool initialized = false;
+		
 		public MainPage()
 		{
 			this.InitializeComponent();
@@ -86,10 +72,23 @@ namespace DoorLatch
 
 			var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
 			{
-				BadgeNum.Text = str.ToString();
+				txtBadgeNum.Text = str.ToString();
+				DateTime time = DateTime.Now;
+				string format = "HH:mm";
+				txtTimeStamp.Text = time.ToString(format);
 			});
 			ParseData(str);
+			//Timer blankTimer = new Timer(this.BlankForm, null, TimeSpan.FromSeconds(5).Milliseconds, Timeout.Infinite);
 			}
+		}
+
+		private void BlankForm(object state)
+		{
+			var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+			{
+				txtBadgeNum.Text = "";
+				txtTimeStamp.Text = "";
+			});
 		}
 
 		private void ParseData(string badgeDoorData)

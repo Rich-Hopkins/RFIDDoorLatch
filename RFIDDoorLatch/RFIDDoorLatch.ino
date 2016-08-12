@@ -6,17 +6,18 @@
 const int SS_PIN = 10;
 const int RST_PIN = 9;
 const int DoorID = 8;
-const int redPin = 7;  
+const int redPin = 3; 
+const int bluePin = 5;  
 const int greenPin = 6;
-const int bluePin = 5; 
-const int doorPin = 3; 
+const int doorPin = 2; 
 String strDoorID;
 
 // Color Modes
+const int COLOR_MODE_OFF = 0;
 const int COLOR_MODE_RED = 1;
 const int COLOR_MODE_GREEN = 2;
 const int COLOR_MODE_BLUE = 3;
-const int COLOR_MODE_OFF = 0;
+const int COLOR_MODE_YELLOW = 4;
 
 MFRC522 rfid(SS_PIN, RST_PIN); // Instance of the class
 MFRC522::MIFARE_Key key;
@@ -91,6 +92,7 @@ void loop()
 		printHex(rfid.uid.uidByte, rfid.uid.size);
 		hasTag = true;
 		time = millis();
+		setLEDMode(COLOR_MODE_YELLOW);
 
 		//halt PICC
 		rfid.PICC_HaltA();
@@ -123,6 +125,20 @@ void loop()
 			digitalWrite(redPin, LOW);
 			digitalWrite(greenPin, LOW);
 			digitalWrite(bluePin, HIGH);
+		}
+
+		//YELLOW
+		if (color == COLOR_MODE_YELLOW) {
+			analogWrite(redPin, 127);
+			analogWrite(greenPin, 127);
+			analogWrite(bluePin, 127);
+		}
+
+		//OFF
+		if (color == COLOR_MODE_OFF) {
+			digitalWrite(redPin, LOW);
+			digitalWrite(greenPin, LOW);
+			digitalWrite(bluePin, LOW);
 		}
 
 	}

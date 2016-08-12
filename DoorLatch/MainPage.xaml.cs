@@ -72,9 +72,9 @@ namespace DoorLatch
 
 			var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
 			{
-				txtBadgeNum.Text = str.ToString();
+				txtBadgeNum.Text = str.ToString().Substring(2);
 				DateTime time = DateTime.Now;
-				string format = "HH:mm";
+				string format = "hh:mm:ss tt";
 				txtTimeStamp.Text = time.ToString(format);
 			});
 			ParseData(str);
@@ -97,12 +97,23 @@ namespace DoorLatch
 			string badgeNum = badgeDoorData.Substring(3);
 			if (badgeNum == "6014EAD5")
 			{
+				SetAccessGranted(true);
 				SendData("1" + doorNum + badgeNum);
 			}
 			else
 			{
+				SetAccessGranted(false);
 				SendData("0" + doorNum + badgeNum);
 			}
+		}
+
+		private void SetAccessGranted(bool accessGranted)
+		{
+			var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+			{
+				if (accessGranted) txtAccessGranted.Text = "Yes";
+				else txtAccessGranted.Text = "No";
+			});
 		}
 
 		private void SendData(string authorization)

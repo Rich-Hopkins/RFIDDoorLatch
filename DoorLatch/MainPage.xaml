@@ -1,11 +1,11 @@
 ﻿<Page
-    x:Class="DoorLatch.MainPage"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:DoorLatch"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+	x:Class="DoorLatch.MainPage"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:local="using:DoorLatch"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d">
 
 	<Page.Resources>
 		<Style
@@ -18,7 +18,7 @@
 				Property="VerticalAlignment"
 				Value="Center"></Setter>
 		</Style>
-		
+
 		<Style
 			TargetType="TextBlock"
 			BasedOn="{StaticResource VerticalCenter}">
@@ -35,9 +35,13 @@
 		</Style>
 	</Page.Resources>
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" HorizontalAlignment="Center">
+	<Grid
+		Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+		HorizontalAlignment="Center">
 		<StackPanel
 			VerticalAlignment="Center">
+			<TextBlock
+				HorizontalAlignment="Center">Last Swipe</TextBlock>
 			<Grid
 				Margin="12">
 				<Grid.ColumnDefinitions>
@@ -46,12 +50,13 @@
 					<ColumnDefinition
 						Width="*"></ColumnDefinition>
 				</Grid.ColumnDefinitions>
-				<TextBlock Grid.Column="0">Badge Number:</TextBlock>
-				<TextBox
+				<TextBlock
+					Grid.Column="0">Badge Number:</TextBlock>
+				<TextBlock
 					x:Name="txtBadgeNum"
 					Grid.Column="1"
-					MinWidth="125"
-					Text="Value"></TextBox>
+					MinWidth="100"
+					Text="Value"></TextBlock>
 			</Grid>
 
 			<Grid
@@ -62,13 +67,29 @@
 					<ColumnDefinition
 						Width="*"></ColumnDefinition>
 				</Grid.ColumnDefinitions>
-				<TextBlock Grid.Column="0">Swipe Time:</TextBlock>
-				<TextBox 
+				<TextBlock
+					Grid.Column="0">Swipe Time:</TextBlock>
+				<TextBlock
 					x:Name="txtTimeStamp"
 					Grid.Column="1"
-						 
-					Text="12:00 PM"></TextBox>
+					Text="12:00 PM"></TextBlock>
+			</Grid>
+
+			<Grid
+				Margin="12">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition
+						Width="*"></ColumnDefinition>
+					<ColumnDefinition
+						Width="*"></ColumnDefinition>
+				</Grid.ColumnDefinitions>
+				<TextBlock
+					Grid.Column="0">Access Granted:</TextBlock>
+				<TextBlock
+					x:Name="txtAccessGranted"
+					Grid.Column="1"
+					Text="False"></TextBlock>
 			</Grid>
 		</StackPanel>
-    </Grid>
+	</Grid>
 </Page>

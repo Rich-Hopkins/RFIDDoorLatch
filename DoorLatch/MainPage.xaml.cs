@@ -53,6 +53,7 @@ namespace DoorLatch
 			doorPin = gpio.OpenPin(21);
 			doorPin.SetDriveMode(GpioPinDriveMode.Output);
 			doorPin.Write(GpioPinValue.Low);
+			ResetPins();
 		}
 
 		private void InitLightTimer()
@@ -66,14 +67,19 @@ namespace DoorLatch
 		private void LightTimer_Tick(object sender, object e)
 		{
 			(sender as DispatcherTimer).Stop();
-			bit0Pin.Write(GpioPinValue.Low);
-			bit1Pin.Write(GpioPinValue.Low);
-			doorPin.Write(GpioPinValue.Low);
+			ResetPins();
 			var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
 			{
 				txtBadgeNum.Text = "";
 				txtTimeStamp.Text = "";
 			});
+		}
+
+		private void ResetPins()
+		{
+			bit0Pin.Write(GpioPinValue.Low);
+			bit1Pin.Write(GpioPinValue.High);
+			doorPin.Write(GpioPinValue.Low);
 		}
 
 		private async void initCommunication()
@@ -145,7 +151,7 @@ namespace DoorLatch
 		{
 			if (badgeNum == "6014EAD5")
 			{
-				bit0Pin.Write(GpioPinValue.High);
+				//bit0Pin.Write(GpioPinValue.High);
 				SetAccessGranted(true);
 			}
 			else
@@ -192,6 +198,13 @@ namespace DoorLatch
 			{
 				Debug.WriteLine(e.Message);
 			}
+		}
+
+		protected void OnNavigatedFrom(WebViewNavigationCompletedEventArgs e)
+		{
+			doorPin.Write(GpioPinValue.Low);
+			bit0Pin.Write(GpioPinValue.Low);
+			bit1Pin.Write(GpioPinValue.Low);
 		}
 	}
 }

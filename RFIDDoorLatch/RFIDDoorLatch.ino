@@ -7,8 +7,8 @@ const int SS_PIN = 10;
 const int RST_PIN = 9;
 const int DoorID = 8;
 const int redPin = 3; 
-const int bluePin = 5;  
-const int greenPin = 6;
+const int greenPin = 5;
+const int bluePin = 6;  
 const int bit0Pin = 7;
 const int bit1Pin = 8;
 
@@ -47,11 +47,11 @@ void setup()
 
 	time = millis();
 
-	setLEDMode(COLOR_MODE_BLUE);
+	//setLEDMode(COLOR_MODE_BLUE);
 
-	Serial.print("Door # ");
-	Serial.print(DoorID);
-	Serial.println(" initialized.");
+	//Serial.print("Door # ");
+	//Serial.print(DoorID);
+	//Serial.println(" initialized.");
 
 	clearTagData();
 	Wire.onRequest(SendData);
@@ -67,8 +67,10 @@ void loop()
 	}
 	else {
 		unsigned long time2 = millis();
-		if (time2 - time > 3000 || time2 < time) {
-			clearTagData();
+		if ((time2 - time > 3000 || time2 < time)) {
+			int bit0 = digitalRead(bit0Pin);
+			int bit1 = digitalRead(bit1Pin);
+			if(bit0 == LOW && bit1 == HIGH)	clearTagData();
 		}
 	}
 }
@@ -76,12 +78,6 @@ void loop()
 void CheckLEDInput() {
 	int bit0 = digitalRead(bit0Pin);
 	int bit1 = digitalRead(bit1Pin);
-
-	//standby
-	if (bit0 == LOW && bit1 == LOW) {
-		setLEDMode(COLOR_MODE_BLUE);
-		return;
-	}
 
 	//granted
 	if (bit0 == HIGH && bit1 == HIGH) {
@@ -93,6 +89,15 @@ void CheckLEDInput() {
 	if (bit0 == HIGH && bit1 == LOW) {
 		setLEDMode(COLOR_MODE_RED);
 	}
+
+	//standby
+	if (bit0 == LOW && bit1 == HIGH) {
+		setLEDMode(COLOR_MODE_BLUE);
+		return;
+	}
+
+	//off	
+	setLEDMode(COLOR_MODE_OFF);
 }
 
 	void CheckForCard() {
@@ -126,7 +131,7 @@ void CheckLEDInput() {
 	}
 
 	void clearTagData() {
-		Serial.println("clearTagData()");
+		//Serial.println("clearTagData()");
 		tag = "FFFFFFFFFFF";
 		cardSent = false;
 		hasTag = false;
@@ -140,9 +145,9 @@ void CheckLEDInput() {
 			tag += String(buffer[i], HEX);
 		}
 		tag.toUpperCase();
-		Serial.print("tag variable is : ");
+		/*Serial.print("tag variable is : ");
 		Serial.print(tag);
-		Serial.println();
+		Serial.println();*/
 	}
 
 	void SendData() {
@@ -173,14 +178,6 @@ void CheckLEDInput() {
 		//else {
 		//	DenyAccess();
 		//}
-	}
-
-	void GrantAccess() {
-		setLEDMode(COLOR_MODE_GREEN);
-	}
-
-	void DenyAccess() {
-		setLEDMode(COLOR_MODE_RED);
 	}
 
 	void setLEDMode(int color) {

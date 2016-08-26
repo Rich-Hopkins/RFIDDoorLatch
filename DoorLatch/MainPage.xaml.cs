@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Net;
 using Windows.UI.Xaml.Controls;
 using Windows.Devices.I2c;
 using Windows.Devices.Enumeration;
 using System.Threading;
+using System.Threading.Tasks;
 using Windows.Devices.Gpio;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
@@ -21,11 +24,14 @@ namespace DoorLatch
 		private I2cDevice device;
 		private Timer periodicTimer;
 		private DispatcherTimer lightTimer;
+		private DispatcherTimer shutdownTimer;
 		private bool lightOn = false;
 		private bool initialized = false;
 		private GpioPin bit0Pin;
 		private GpioPin bit1Pin;
 		private GpioPin doorPin;
+		private GpioPin shutdownPin;
+		private GpioPin ledPin;
 		private GpioPinValue pinValue;
 		private bool gpioStatus = false;
 
@@ -35,6 +41,7 @@ namespace DoorLatch
 			initCommunication();
 			InitGpio();
 			InitLightTimer();
+			InitShutdownTimer();
 		}
 
 		private void InitGpio()
@@ -53,6 +60,13 @@ namespace DoorLatch
 			doorPin = gpio.OpenPin(21);
 			doorPin.SetDriveMode(GpioPinDriveMode.Output);
 			doorPin.Write(GpioPinValue.Low);
+			ledPin = gpio.OpenPin(16);
+			ledPin.SetDriveMode(GpioPinDriveMode.Output);
+			ledPin.Write(GpioPinValue.High);
+			shutdownPin = gpio.OpenPin(13);
+			shutdownPin.SetDriveMode(GpioPinDriveMode.Input);
+			shutdownPin.DebounceTimeout = TimeSpan.FromMilliseconds(200);
+			shutdownPin.ValueChanged += ShutdownPin_ValueChanged;
 			ResetPins();
 		}
 
@@ -68,10 +82,31 @@ namespace DoorLatch
 		{
 			(sender as DispatcherTimer).Stop();
 			ResetPins();
-			var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+		}
+
+		private void InitShutdownTimer()
+		{
+			shutdownTimer = new DispatcherTimer();
+			shutdownTimer.Interval = TimeSpan.FromMilliseconds(5000);
+			shutdownTimer.Tick += ShutdownTimer_Tick;
+			shutdownTimer.Stop();
+		}
+
+		private void ShutdownTimer_Tick(object sender, object e)
+		{
+			shutdownTimer.Stop();
+			GpioPinValue pv = shutdownPin.Read();
+			if (pv == GpioPinValue.High) ShutdownPi();
+		}
+
+		private void ShutdownPin_ValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+		{
+			var shutdownTask = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
 			{
-				txtBadgeNum.Text = "";
-				txtTimeStamp.Text = "";
+				if (shutdownPin.Read() == GpioPinValue.High && !shutdownTimer.IsEnabled)
+				{
+					shutdownTimer.Start();
+				}
 			});
 		}
 
@@ -100,13 +135,8 @@ namespace DoorLatch
 			}
 		}
 
-		private void TimerCallback(object state)
+		private async void TimerCallback(object state)
 		{
-			//if (!initialized)
-			//{
-			//	initCommunication();
-			//	return;
-			//}
 			byte[] RegAddrBuf = new byte[] { 8 };
 			byte[] ReadBuf = new Byte[8];
 			char[] cArray = new char[8];
@@ -132,7 +162,7 @@ namespace DoorLatch
 			string str = new string(cArray);
 			Debug.WriteLine(str);
 
-			var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+			var uiTask = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
 			{
 				txtBadgeNum.Text = str.ToString();
 				DateTime time = DateTime.Now;
@@ -142,16 +172,11 @@ namespace DoorLatch
 			ParseData(str);
 
 		}
-
-		private void BlankForm(object state)
-		{
-		}
-
+		
 		private async void ParseData(string badgeNum)
 		{
 			if (badgeNum == "6014EAD5")
 			{
-				//bit0Pin.Write(GpioPinValue.High);
 				SetAccessGranted(true);
 			}
 			else
@@ -183,28 +208,45 @@ namespace DoorLatch
 					doorPin.Write(GpioPinValue.Low);
 				}
 			});
-
 		}
 
-		private void SendData(string authorization)
-		{
-			byte[] b = System.Text.Encoding.UTF8.GetBytes(authorization);
-
-			try
-			{
-				device.Write(b);
-			}
-			catch (Exception e)
-			{
-				Debug.WriteLine(e.Message);
-			}
-		}
-
-		protected void OnNavigatedFrom(WebViewNavigationCompletedEventArgs e)
+		private void MainPage_Unloaded(object sender, object args)
 		{
 			doorPin.Write(GpioPinValue.Low);
 			bit0Pin.Write(GpioPinValue.Low);
 			bit1Pin.Write(GpioPinValue.Low);
+			ledPin.Write(GpioPinValue.Low);
+		}
+		
+		private async void ShutdownPi()
+		{
+			String URL = "http://localhost:8080/api/control/shutdown";
+			System.Diagnostics.Debug.WriteLine(URL);
+			StreamReader SR = await PostJsonStreamData(URL);
+		}
+
+		private async Task<StreamReader> PostJsonStreamData(String URL)
+		{
+			HttpWebRequest wrGETURL = null;
+			Stream objStream = null;
+			StreamReader objReader = null;
+			try
+			{
+				wrGETURL = (HttpWebRequest) WebRequest.Create(URL);
+				wrGETURL.Method = "POST";
+				wrGETURL.Credentials = new NetworkCredential("Administrator", "6432968");
+				HttpWebResponse Response = (HttpWebResponse) (await wrGETURL.GetResponseAsync());
+				if (Response.StatusCode == HttpStatusCode.OK)
+				{
+					objStream = Response.GetResponseStream();
+					objReader = new StreamReader(objStream);
+				}
+			}
+			catch (Exception e)
+			{
+				System.Diagnostics.Debug.WriteLine("GetData " + e.Message);
+			}
+			return objReader;
 		}
 	}
 }

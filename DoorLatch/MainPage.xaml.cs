@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -8,7 +9,9 @@ using Windows.Devices.Enumeration;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Gpio;
+using Windows.Storage;
 using Windows.UI.Core;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 
 
@@ -34,6 +37,7 @@ namespace DoorLatch
 		private GpioPin ledPin;
 		private GpioPinValue pinValue;
 		private bool gpioStatus = false;
+		private List<string> cardList;
 
 		public MainPage()
 		{
@@ -42,6 +46,57 @@ namespace DoorLatch
 			InitGpio();
 			InitLightTimer();
 			InitShutdownTimer();
+			InitCardData();
+		}
+
+		private void InitCardData()
+		{
+			cardList = new List<string>();
+			LoadCardData();
+		}
+
+		private async void LoadCardData()
+		{
+			cardList.Clear();
+			string filename = "cards.txt";
+			string contents = null;
+			StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+
+			if (await localFolder.TryGetItemAsync(filename) == null) DownloadCardData();
+
+			try
+			{
+				StorageFile file = await localFolder.GetFileAsync(filename);
+				contents = await FileIO.ReadTextAsync(file);
+			}
+			catch (Exception)
+			{
+
+			}
+
+			string[] cards = contents.Split('\n');
+			foreach (string card in cards) cardList.Add(card);
+		}
+
+		private async void DownloadCardData()
+		{
+			string filename = "cards.txt";
+			Windows.Storage.StorageFolder storageFolder = Windows.Storage.ApplicationData.Current.LocalFolder;
+			Windows.Storage.StorageFile file = await storageFolder.CreateFileAsync(filename, Windows.Storage.CreationCollisionOption.ReplaceExisting);
+			
+			file = await storageFolder.GetFileAsync(filename);
+			var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.ReadWrite);
+			using (var outputStream = stream.GetOutputStreamAt(0))
+			{
+				using (var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream))
+				{
+					dataWriter.WriteString("6014EAD5\nCDDCEED5");
+					await dataWriter.StoreAsync();
+					await outputStream.FlushAsync();
+				}
+			}
+			stream.Dispose();
+			LoadCardData();
 		}
 
 		private void InitGpio()
@@ -63,8 +118,8 @@ namespace DoorLatch
 			ledPin = gpio.OpenPin(16);
 			ledPin.SetDriveMode(GpioPinDriveMode.Output);
 			ledPin.Write(GpioPinValue.High);
-			shutdownPin = gpio.OpenPin(13);
-			shutdownPin.SetDriveMode(GpioPinDriveMode.Input);
+			shutdownPin = gpio.OpenPin(5);
+			shutdownPin.SetDriveMode(GpioPinDriveMode.InputPullUp);
 			shutdownPin.DebounceTimeout = TimeSpan.FromMilliseconds(200);
 			shutdownPin.ValueChanged += ShutdownPin_ValueChanged;
 			ResetPins();
@@ -96,14 +151,14 @@ namespace DoorLatch
 		{
 			shutdownTimer.Stop();
 			GpioPinValue pv = shutdownPin.Read();
-			if (pv == GpioPinValue.High) ShutdownPi();
+			if (pv == GpioPinValue.Low) ShutdownPi();
 		}
 
 		private void ShutdownPin_ValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
 		{
 			var shutdownTask = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
 			{
-				if (shutdownPin.Read() == GpioPinValue.High && !shutdownTimer.IsEnabled)
+				if (shutdownPin.Read() == GpioPinValue.Low && !shutdownTimer.IsEnabled)
 				{
 					shutdownTimer.Start();
 				}
@@ -172,10 +227,10 @@ namespace DoorLatch
 			ParseData(str);
 
 		}
-		
+
 		private async void ParseData(string badgeNum)
 		{
-			if (badgeNum == "6014EAD5")
+			if (cardList.Contains(badgeNum))
 			{
 				SetAccessGranted(true);
 			}
@@ -217,9 +272,10 @@ namespace DoorLatch
 			bit1Pin.Write(GpioPinValue.Low);
 			ledPin.Write(GpioPinValue.Low);
 		}
-		
+
 		private async void ShutdownPi()
 		{
+			ledPin.Write(GpioPinValue.Low);
 			String URL = "http://localhost:8080/api/control/shutdown";
 			System.Diagnostics.Debug.WriteLine(URL);
 			StreamReader SR = await PostJsonStreamData(URL);

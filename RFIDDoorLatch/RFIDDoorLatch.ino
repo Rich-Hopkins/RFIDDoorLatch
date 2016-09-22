@@ -3,9 +3,10 @@
 #include <MFRC522.h>
 #include <Wire.h>
 
+const int DoorID = 8;
+
 const int SS_PIN = 10;
 const int RST_PIN = 9;
-const int DoorID = 8;
 const int redPin = 3; 
 const int greenPin = 5;
 const int bluePin = 6;  
